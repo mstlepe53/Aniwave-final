@@ -289,6 +289,28 @@ export default function Watch() {
     };
   }, []);
 
+  // Fix: reset viewport scale after exiting fullscreen (Android/iOS zoom bug)
+  useEffect(() => {
+    const resetViewport = () => {
+      if (!document.fullscreenElement) {
+        const viewport = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+        if (viewport) {
+          viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+          // Briefly allow scale reset then restore
+          setTimeout(() => {
+            viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+          }, 100);
+        }
+      }
+    };
+    document.addEventListener('fullscreenchange', resetViewport);
+    document.addEventListener('webkitfullscreenchange', resetViewport);
+    return () => {
+      document.removeEventListener('fullscreenchange', resetViewport);
+      document.removeEventListener('webkitfullscreenchange', resetViewport);
+    };
+  }, []);
+
   const toggleAutoNext = () => {
     const next = !autoNext;
     setAutoNext(next);
@@ -334,7 +356,7 @@ export default function Watch() {
   ];
 
   return (
-    <div className="max-w-[1600px] mx-auto md:p-6 transition-colors relative z-20">
+    <div className="max-w-[1600px] mx-auto md:p-6 transition-colors relative z-20 px-2 pt-2 md:px-0 md:pt-0">
       <SEOHead
         title={anime ? `Watch ${title} Episode ${episode} – AniWave` : 'Watch Anime – AniWave'}
         description={anime ? stripHtml(anime.description).slice(0, 160) : ''}
@@ -348,8 +370,8 @@ export default function Watch() {
         {/* ── Left: Video + Controls ── */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* 16:9 Player - full width on mobile like Miruro */}
-          <div className="w-full bg-black md:rounded-xl overflow-hidden relative" style={{ paddingTop: '56.25%' }}>
+          {/* 16:9 Player - rounded corners like Miruro */}
+          <div className="w-full bg-black rounded-xl overflow-hidden relative" style={{ paddingTop: '56.25%' }}>
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
