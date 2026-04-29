@@ -370,8 +370,8 @@ export default function Watch() {
         {/* ── Left: Video + Controls ── */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* 16:9 Player - rounded corners like Miruro */}
-          <div className="w-full bg-black rounded-xl overflow-hidden relative" style={{ paddingTop: '56.25%' }}>
+          {/* 16:9 Player - subtle rounded corners like Miruro */}
+          <div className="w-full bg-black rounded-md overflow-hidden relative" style={{ paddingTop: '56.25%' }}>
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
