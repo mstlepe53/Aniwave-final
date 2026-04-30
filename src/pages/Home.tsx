@@ -19,7 +19,7 @@ import {
   MessageSquare, X, User, AlertCircle,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { useHomeData } from '../hooks/useAnimeQueries';
+import { useHomeData, useSpotlight } from '../hooks/useAnimeQueries';
 import {
   FALLBACK_IMAGE, AnimeCard as AnimeCardType, formatFormat,
   getPopular, getAiringAnime, getUpcoming, getTrending,
@@ -508,6 +508,7 @@ function MainTabs() {
 // ─── Home ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { data: homeData, isPending: homeLoading, isError: homeError } = useHomeData();
+  const { data: spotlightData, isPending: spotlightLoading } = useSpotlight();
   const { user, token, setUser, refreshUser } = useAuth();
   const [watchHistory, setWatchHistory] = useState<any[]>([]);
   const navigate = useNavigate();
@@ -547,8 +548,8 @@ export default function Home() {
   }, []);
 
   const heroItems = useMemo(() =>
-    (homeData?.trending || []).filter(a => a.status !== 'NOT_YET_RELEASED' && a.status !== 'CANCELLED'),
-    [homeData]
+    (spotlightData || homeData?.trending || []).filter(a => a.status !== 'NOT_YET_RELEASED' && a.status !== 'CANCELLED'),
+    [spotlightData, homeData]
   );
 
   return (
@@ -571,7 +572,7 @@ export default function Home() {
       )}
 
       {/* Hero Spotlight — no tab buttons above it */}
-      {homeLoading || !heroItems.length
+      {spotlightLoading || !heroItems.length
         ? <div className="w-full h-[400px] md:h-[500px] bg-gray-200 dark:bg-gray-800 animate-pulse rounded-2xl" />
         : <HeroSlider items={heroItems} />
       }
