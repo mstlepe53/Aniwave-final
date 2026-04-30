@@ -7,6 +7,17 @@ import {
 
 const TTL = { home: 10*60000, list: 5*60000, detail: 60*60000, search: 5*60000 };
 
+// Spotlight: fetch trending ONLY — fast, independent of the rest of home data
+export function useSpotlight() {
+  return useQuery({
+    queryKey: ['anime-spotlight'],
+    queryFn: () => getTrending(1, 10),
+    staleTime: TTL.home,
+    gcTime: TTL.home * 2,
+    retry: 3,
+  });
+}
+
 export function useHomeData() {
   return useQuery({ queryKey: ['anime-home'], queryFn: getHomeData, staleTime: TTL.home, gcTime: TTL.home*2, retry: 3 });
 }
