@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Play, Star, Tv } from 'lucide-react';
-import { FALLBACK_IMAGE } from '../services/anilist';
+import { FALLBACK_IMAGE, getAnimeDetails } from '../services/anilist';
 import type { AnimeCard as AnimeCardType } from '../services/anilist';
 
 interface Props {
@@ -11,13 +12,24 @@ interface Props {
 
 const AnimeCard = memo(function AnimeCard({ anime, linkPrefix = '/anime' }: Props) {
   const href = `${linkPrefix}/${anime.id}`;
+  const queryClient = useQueryClient();
+
+  const handleHover = useCallback(() => {
+    // Prefetch full detail on hover — by the time user clicks, data is loading/cached
+    queryClient.prefetchQuery({
+      queryKey: ['anime', String(anime.id)],
+      queryFn: () => getAnimeDetails(anime.id),
+      staleTime: 60 * 60 * 1000,
+    });
+  }, [anime.id, queryClient]);
+
   const statusColor: Record<string, string> = {
     RELEASING: 'bg-green-500', FINISHED: 'bg-blue-500',
     NOT_YET_RELEASED: 'bg-yellow-500', CANCELLED: 'bg-red-500', HIATUS: 'bg-orange-500',
   };
 
   return (
-    <Link to={href} className="group cursor-pointer flex flex-col">
+    <Link to={href} className="group cursor-pointer flex flex-col" onMouseEnter={handleHover} onTouchStart={handleHover}>
       <div className="relative aspect-[3/4] rounded-lg overflow-hidden mb-2 bg-gray-800">
         <img
           src={anime.image || FALLBACK_IMAGE}
