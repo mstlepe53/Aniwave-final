@@ -694,68 +694,97 @@ export default function Watch() {
               </div>
             ) : anime ? (
               <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                {/* Mobile: compact side-by-side like reference screenshot */}
+                {/* Compact side-by-side like reference screenshot */}
                 <div className="flex gap-4">
-                  {/* Poster */}
+                  {/* Poster + button */}
                   <div className="shrink-0 space-y-2">
-                    <img src={posterImg} alt={title}
+                    <img
+                      src={posterImg}
+                      alt={title}
                       className="w-28 aspect-[3/4] object-cover rounded-lg bg-gray-100 dark:bg-gray-800"
-                      onError={e => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }} />
-                    {/* Trailer / + / AL / MAL buttons like reference */}
-                    <div className="flex gap-1.5">
-                      {/* DETAILS button */}
-                    <Link to={`/anime/${id}`}
-                      className="flex-1 py-1.5 bg-gray-800 dark:bg-gray-700 text-white rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition-colors">
+                      onError={e => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
+                    />
+                    <Link
+                      to={`/anime/${id}`}
+                      className="w-full py-1.5 bg-gray-800 dark:bg-gray-700 text-white rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition-colors"
+                    >
                       <Info className="w-3 h-3" /> DETAILS
                     </Link>
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <Link to={`/anime/${id}`}
-                      className="text-base font-black text-gray-900 dark:text-white hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors block mb-0.5 leading-tight">
+                    <Link
+                      to={`/anime/${id}`}
+                      className="text-base font-black text-gray-900 dark:text-white hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors block mb-0.5 leading-tight"
+                    >
                       {title}
                     </Link>
                     {anime.title?.native && (
                       <p className="text-xs text-gray-400 dark:text-gray-500 italic mb-2">{anime.title.native}</p>
                     )}
-
-                    {/* Genre tags like reference — orange/amber style */}
+                    {/* Genre tags */}
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {(anime.genres || []).map((g: string, i: number) => (
-                        <Link key={g} to={`/genre/${encodeURIComponent(g)}`}
+                        <Link
+                          key={g}
+                          to={`/genre/${encodeURIComponent(g)}`}
                           className="px-2 py-0.5 rounded-full text-[10px] font-bold hover:opacity-90 transition-opacity"
-                          style={{ backgroundColor: GENRE_COLORS[i % GENRE_COLORS.length].bg, color: GENRE_COLORS[i % GENRE_COLORS.length].text }}>
+                          style={{ backgroundColor: GENRE_COLORS[i % GENRE_COLORS.length].bg, color: GENRE_COLORS[i % GENRE_COLORS.length].text }}
+                        >
                           {g}
                         </Link>
                       ))}
                     </div>
-
-                    {/* Stats grid like reference */}
+                    {/* Stats */}
                     <div className="space-y-1 text-xs">
                       {anime.format && (
-                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Format:</span><span className="font-bold dark:text-white">{anime.format}</span></div>
+                        <div className="flex gap-1">
+                          <span className="text-gray-500 dark:text-gray-400">Format:</span>
+                          <span className="font-bold dark:text-white">{anime.format}</span>
+                        </div>
                       )}
                       {anime.status && (
-                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Status:</span><span className="font-bold dark:text-white">{anime.status === 'RELEASING' ? 'Airing' : anime.status === 'FINISHED' ? 'Finished' : anime.status}</span></div>
+                        <div className="flex gap-1">
+                          <span className="text-gray-500 dark:text-gray-400">Status:</span>
+                          <span className="font-bold dark:text-white">{anime.status === 'RELEASING' ? 'Airing' : anime.status === 'FINISHED' ? 'Finished' : anime.status}</span>
+                        </div>
                       )}
                       {anime.episodes && (
-                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Episodes:</span><span className="font-bold dark:text-white">{anime.episodes}</span></div>
+                        <div className="flex gap-1">
+                          <span className="text-gray-500 dark:text-gray-400">Episodes:</span>
+                          <span className="font-bold dark:text-white">{anime.episodes}</span>
+                        </div>
                       )}
                       {anime.averageScore && (
-                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Rating:</span><span className="font-bold dark:text-white">{anime.averageScore} <span className="font-normal text-gray-400">/100</span></span></div>
+                        <div className="flex gap-1">
+                          <span className="text-gray-500 dark:text-gray-400">Rating:</span>
+                          <span className="font-bold dark:text-white">{anime.averageScore} <span className="font-normal text-gray-400">/100</span></span>
+                        </div>
                       )}
                       {anime.startDate?.year && (
-                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Start Date:</span><span className="font-bold dark:text-white">{[anime.startDate.month ? new Date(0, anime.startDate.month - 1).toLocaleString('en', { month: 'long' }) : null, anime.startDate.day, anime.startDate.year].filter(Boolean).join(' ')}</span></div>
+                        <div className="flex gap-1">
+                          <span className="text-gray-500 dark:text-gray-400">Start Date:</span>
+                          <span className="font-bold dark:text-white">
+                            {[
+                              anime.startDate.month ? new Date(0, anime.startDate.month - 1).toLocaleString('en', { month: 'long' }) : null,
+                              anime.startDate.day,
+                              anime.startDate.year,
+                            ].filter(Boolean).join(' ')}
+                          </span>
+                        </div>
                       )}
                       {anime.studios?.nodes?.[0]?.name && (
-                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Studios:</span><span className="font-bold dark:text-white">{anime.studios.nodes[0].name}</span></div>
+                        <div className="flex gap-1">
+                          <span className="text-gray-500 dark:text-gray-400">Studios:</span>
+                          <span className="font-bold dark:text-white">{anime.studios.nodes[0].name}</span>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Description below on mobile */}
+                {/* Description */}
                 {anime.description && (
                   <p className="text-xs text-gray-600 dark:text-gray-400 mt-3 leading-relaxed line-clamp-4">
                     {stripHtml(anime.description)}
