@@ -18,12 +18,12 @@ import {
   ChevronLeft, ChevronRight, Play, Info, List, Star, Clock,
   MessageSquare, X, User, AlertCircle,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useHomeData, useSpotlight } from '../hooks/useAnimeQueries';
 import {
   FALLBACK_IMAGE, AnimeCard as AnimeCardType, formatFormat,
   getPopular, getAiringAnime, getUpcoming, getTrending,
-  getWeeklySchedule, ScheduleItem,
+  getWeeklySchedule, ScheduleItem, getAnimeDetails,
 } from '../services/anilist';
 import AnimeCard from '../components/AnimeCard';
 import { SkeletonShowCard } from '../components/SkeletonCard';
@@ -118,6 +118,15 @@ function HeroSlider({ items }: { items: AnimeCardType[] }) {
   const [idx, setIdx] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval>>();
   const total = Math.min(items.length, 8);
+  const queryClient = useQueryClient();
+
+  const prefetchAnime = useCallback((id: number) => {
+    queryClient.prefetchQuery({
+      queryKey: ['anime', String(id)],
+      queryFn: () => getAnimeDetails(id),
+      staleTime: 60 * 60 * 1000,
+    });
+  }, [queryClient]);
 
   // Preload next image immediately
   useEffect(() => {
@@ -137,9 +146,22 @@ function HeroSlider({ items }: { items: AnimeCardType[] }) {
 
   useEffect(() => {
     if (total <= 1) return;
-    timer.current = setInterval(() => setIdx(i => (i + 1) % total), HERO_AUTO_ROTATE_INTERVAL_MS);
+    timer.current = setInterval(() => {
+      setIdx(i => {
+        const next = (i + 1) % total;
+        // Prefetch the next item's detail page while user is still watching current
+        if (items[next]) {
+          queryClient.prefetchQuery({
+            queryKey: ['anime', String(items[next].id)],
+            queryFn: () => getAnimeDetails(items[next].id),
+            staleTime: 60 * 60 * 1000,
+          });
+        }
+        return next;
+      });
+    }, HERO_AUTO_ROTATE_INTERVAL_MS);
     return () => clearInterval(timer.current);
-  }, [total]);
+  }, [total, items, queryClient]);
 
   const prev = useCallback(() => {
     clearInterval(timer.current);
@@ -222,12 +244,16 @@ function HeroSlider({ items }: { items: AnimeCardType[] }) {
         <div className="flex flex-wrap gap-3">
           <Link
             to={`/anime/${item.id}`}
+            onMouseEnter={() => prefetchAnime(item.id)}
+            onTouchStart={() => prefetchAnime(item.id)}
             className="px-6 h-[55px] bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm transition-colors flex-1 sm:flex-none"
           >
             <Info className="w-5 h-5" /> DETAILS
           </Link>
           <Link
             to={`/watch/${item.id}/1`}
+            onMouseEnter={() => prefetchAnime(item.id)}
+            onTouchStart={() => prefetchAnime(item.id)}
             className="px-6 h-[55px] bg-gray-900 dark:bg-gray-700 text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-600 shadow-sm transition-colors flex-1 sm:flex-none"
           >
             <Play className="w-5 h-5 fill-current" /> WATCH NOW
@@ -268,6 +294,12 @@ function GenreSlider() {
 function SidebarSection({ title, items, loading }: { title: string; items: AnimeCardType[]; loading: boolean }) {
   const [showAll, setShowAll] = useState(false);
   const shown = showAll ? items : items.slice(0, 5);
+  const queryClient = useQueryClient();
+  const prefetch = (id: number) => queryClient.prefetchQuery({
+    queryKey: ['anime', String(id)],
+    queryFn: () => getAnimeDetails(id),
+    staleTime: 60 * 60 * 1000,
+  });
   return (
     <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
       <h2 className="text-lg font-bold mb-4 flex items-center gap-2 dark:text-white">
@@ -287,7 +319,7 @@ function SidebarSection({ title, items, loading }: { title: string; items: Anime
           : shown.length === 0
             ? <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">No content available.</p>
             : shown.map(a => (
-                <Link key={a.id} to={`/anime/${a.id}`} className="flex gap-3 group cursor-pointer">
+                <Link key={a.id} to={`/anime/${a.id}`} className="flex gap-3 group cursor-pointer" onMouseEnter={() => prefetch(a.id)} onTouchStart={() => prefetch(a.id)}>
                   <img
                     src={a.image || FALLBACK_IMAGE}
                     alt={a.title}
