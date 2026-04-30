@@ -9,6 +9,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
+import { getTrending } from './services/anilist.ts';
 import './index.css';
 
 if (import.meta.env.DEV && 'serviceWorker' in navigator) {
@@ -35,6 +36,14 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+});
+
+// Prefetch spotlight immediately — runs in parallel with JS parsing/rendering
+// By the time Home mounts, data is already in cache
+queryClient.prefetchQuery({
+  queryKey: ['anime-spotlight'],
+  queryFn: () => getTrending(1, 10),
+  staleTime: 10 * 60 * 1000,
 });
 
 createRoot(document.getElementById('root')!).render(
