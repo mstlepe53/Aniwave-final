@@ -133,6 +133,112 @@ function DropdownPill({
   );
 }
 
+// ─── Episode Panel (reused for both mobile inline + desktop sidebar) ──────────
+interface EpisodePanelProps {
+  loading: boolean;
+  totalEps: number;
+  epFilter: string;
+  setEpFilter: (v: string) => void;
+  epView: 'list' | 'grid';
+  setEpView: (v: (prev: 'list' | 'grid') => 'list' | 'grid') => void;
+  filteredEps: number[];
+  episode: number;
+  id: string;
+  anime: any;
+  posterImg: string;
+  audio: string;
+  title: string;
+}
+
+function EpisodePanel({
+  loading, totalEps, epFilter, setEpFilter, epView, setEpView,
+  filteredEps, episode, id, anime, posterImg, audio, title,
+}: EpisodePanelProps) {
+  return (
+    <div className="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex flex-wrap gap-2 items-center">
+        <span className="text-sm font-bold dark:text-white shrink-0">
+          {loading ? '…' : `Episodes (${totalEps || '?'})`}
+        </span>
+        <div className="relative flex-1 min-w-[120px]">
+          <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input type="text" placeholder="Filter episodes…" value={epFilter}
+            onChange={e => setEpFilter(e.target.value)}
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1.5 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white dark:placeholder-gray-500" />
+        </div>
+        <button onClick={() => setEpView(v => v === 'list' ? 'grid' : 'list')}
+          className="p-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md text-gray-600 dark:text-gray-400 shrink-0">
+          {epView === 'list' ? <Eye className="w-4 h-4" /> : <List className="w-4 h-4" />}
+        </button>
+      </div>
+
+      <div className="max-h-[400px] lg:max-h-[600px] overflow-y-auto">
+        {totalEps === 0 && !loading ? (
+          <div className="p-4 text-center text-sm text-gray-500">Episode info unavailable.</div>
+        ) : loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex gap-3 p-3 border-b border-gray-100 dark:border-gray-800 animate-pulse">
+              <div className="w-12 h-12 shrink-0 rounded bg-gray-200 dark:bg-gray-800" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+                <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
+              </div>
+            </div>
+          ))
+        ) : filteredEps.length === 0 ? (
+          <div className="p-4 text-center text-sm text-gray-500">No episodes found.</div>
+        ) : epView === 'grid' ? (
+          <div className="grid grid-cols-6 gap-1.5 p-2">
+            {filteredEps.map(ep => {
+              const isActive = ep === episode;
+              return (
+                <Link key={ep} to={`/watch/${id}/${ep}`}
+                  className={`aspect-square flex items-center justify-center rounded text-xs font-bold transition-colors ${
+                    isActive ? 'bg-indigo-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  }`}>
+                  {isActive ? <Play className="w-3 h-3 fill-current" /> : ep}
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          filteredEps.map(ep => {
+            const isActive = ep === episode;
+            const streamEp = anime?.streamingEpisodes?.[ep - 1];
+            const epTitle = streamEp?.title;
+            const epThumb = streamEp?.thumbnail || posterImg;
+            return (
+              <Link key={ep} to={`/watch/${id}/${ep}`}
+                onClick={() => addToHistory({ title, image: epThumb, url: `/watch/${id}/${ep}`, subtitle: `EP ${ep}` })}
+                className={`flex gap-3 p-2 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group items-center ${isActive ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
+                <div className={`w-20 h-12 shrink-0 rounded overflow-hidden relative border transition-colors ${
+                  isActive ? 'border-indigo-400' : 'border-gray-200 dark:border-gray-700 group-hover:border-gray-400'
+                }`}>
+                  <img src={epThumb} alt={`Episode ${ep}`} className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLImageElement).src = posterImg; }} />
+                  <div className={`absolute inset-0 flex items-center justify-center bg-black/30 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                    <Play className="w-4 h-4 fill-current text-white drop-shadow" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
+                  <h4 className={`text-xs font-bold truncate transition-colors ${
+                    isActive ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
+                  }`}>
+                    {epTitle && epTitle !== `Episode ${ep}` ? epTitle : `Episode ${ep}`}
+                  </h4>
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mt-0.5 flex items-center gap-1">
+                    <span className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{audio.toUpperCase()}</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Watch Component ─────────────────────────────────────────────────────
 export default function Watch() {
   const { id, episode: epParam } = useParams<{ id: string; episode: string }>();
@@ -368,7 +474,7 @@ export default function Watch() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 md:gap-6 relative z-50">
 
         {/* ── Left: Video + Controls ── */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-3 md:space-y-4">
 
           {/* 16:9 Player - subtle rounded corners like Miruro */}
           <div className="w-full bg-black rounded-md overflow-hidden relative" style={{ paddingTop: '56.25%' }}>
@@ -554,58 +660,119 @@ export default function Watch() {
             </button>
           </div>
 
-          {/* Anime info card */}
-          {loading ? (
-            <div className="flex flex-col sm:flex-row gap-6 bg-white dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 animate-pulse mx-4 md:mx-0">
-              <div className="w-full sm:w-48 shrink-0 aspect-[3/4] rounded-lg bg-gray-200 dark:bg-gray-800" />
-              <div className="flex-1 space-y-3 py-2">
-                <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-                <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-              </div>
-            </div>
-          ) : anime ? (
-            <div className="flex flex-col sm:flex-row gap-6 bg-white dark:bg-gray-950 p-4 rounded-xl border border-gray-200 dark:border-gray-800 mx-4 md:mx-0">
-              <div className="w-full sm:w-48 shrink-0 space-y-2">
-                <img src={posterImg} alt={title}
-                  className="w-full aspect-[3/4] object-cover rounded-lg bg-gray-100 dark:bg-gray-800"
-                  onError={e => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }} />
-                <Link to={`/anime/${id}`}
-                  className="w-full py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition-colors dark:text-white">
-                  <Info className="w-4 h-4" /> DETAILS
-                </Link>
-              </div>
-              <div className="flex-1">
-                <Link to={`/anime/${id}`}
-                  className="text-xl font-bold text-gray-900 dark:text-white mb-1 hover:text-gray-600 dark:hover:text-gray-400 transition-colors block">
-                  {title}
-                </Link>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {(anime.genres || []).map((g: string, i: number) => (
-                    <Link key={g} to={`/genre/${encodeURIComponent(g)}`}
-                      className="px-2 py-1 rounded text-xs font-bold hover:scale-105 transition-transform"
-                      style={{ backgroundColor: GENRE_COLORS[i % GENRE_COLORS.length].bg, color: GENRE_COLORS[i % GENRE_COLORS.length].text }}>
-                      {g}
-                    </Link>
-                  ))}
+          {/* ── MOBILE ONLY: Episode list (shown before anime details) ── */}
+          <div className="lg:hidden px-2 md:px-0">
+            <EpisodePanel
+              loading={loading}
+              totalEps={totalEps}
+              epFilter={epFilter}
+              setEpFilter={setEpFilter}
+              epView={epView}
+              setEpView={setEpView}
+              filteredEps={filteredEps}
+              episode={episode}
+              id={id!}
+              anime={anime}
+              posterImg={posterImg}
+              audio={audio}
+              title={title}
+            />
+          </div>
+
+          {/* ── Anime details card — compact horizontal layout like reference ── */}
+          <div className="mx-2 md:mx-0">
+            {loading ? (
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 animate-pulse">
+                <div className="flex gap-4">
+                  <div className="w-24 shrink-0 aspect-[3/4] rounded-lg bg-gray-200 dark:bg-gray-800" />
+                  <div className="flex-1 space-y-3 py-1">
+                    <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-2/3" />
+                  </div>
                 </div>
+              </div>
+            ) : anime ? (
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                {/* Mobile: compact side-by-side like reference screenshot */}
+                <div className="flex gap-4">
+                  {/* Poster */}
+                  <div className="shrink-0 space-y-2">
+                    <img src={posterImg} alt={title}
+                      className="w-28 aspect-[3/4] object-cover rounded-lg bg-gray-100 dark:bg-gray-800"
+                      onError={e => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }} />
+                    {/* Trailer / + / AL / MAL buttons like reference */}
+                    <div className="flex gap-1.5">
+                      {/* DETAILS button */}
+                    <Link to={`/anime/${id}`}
+                      className="flex-1 py-1.5 bg-gray-800 dark:bg-gray-700 text-white rounded-md text-[10px] font-bold flex items-center justify-center gap-1 transition-colors">
+                      <Info className="w-3 h-3" /> DETAILS
+                    </Link>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <Link to={`/anime/${id}`}
+                      className="text-base font-black text-gray-900 dark:text-white hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors block mb-0.5 leading-tight">
+                      {title}
+                    </Link>
+                    {anime.title?.native && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic mb-2">{anime.title.native}</p>
+                    )}
+
+                    {/* Genre tags like reference — orange/amber style */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {(anime.genres || []).map((g: string, i: number) => (
+                        <Link key={g} to={`/genre/${encodeURIComponent(g)}`}
+                          className="px-2 py-0.5 rounded-full text-[10px] font-bold hover:opacity-90 transition-opacity"
+                          style={{ backgroundColor: GENRE_COLORS[i % GENRE_COLORS.length].bg, color: GENRE_COLORS[i % GENRE_COLORS.length].text }}>
+                          {g}
+                        </Link>
+                      ))}
+                    </div>
+
+                    {/* Stats grid like reference */}
+                    <div className="space-y-1 text-xs">
+                      {anime.format && (
+                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Format:</span><span className="font-bold dark:text-white">{anime.format}</span></div>
+                      )}
+                      {anime.status && (
+                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Status:</span><span className="font-bold dark:text-white">{anime.status === 'RELEASING' ? 'Airing' : anime.status === 'FINISHED' ? 'Finished' : anime.status}</span></div>
+                      )}
+                      {anime.episodes && (
+                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Episodes:</span><span className="font-bold dark:text-white">{anime.episodes}</span></div>
+                      )}
+                      {anime.averageScore && (
+                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Rating:</span><span className="font-bold dark:text-white">{anime.averageScore} <span className="font-normal text-gray-400">/100</span></span></div>
+                      )}
+                      {anime.startDate?.year && (
+                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Start Date:</span><span className="font-bold dark:text-white">{[anime.startDate.month ? new Date(0, anime.startDate.month - 1).toLocaleString('en', { month: 'long' }) : null, anime.startDate.day, anime.startDate.year].filter(Boolean).join(' ')}</span></div>
+                      )}
+                      {anime.studios?.nodes?.[0]?.name && (
+                        <div className="flex gap-1"><span className="text-gray-500 dark:text-gray-400">Studios:</span><span className="font-bold dark:text-white">{anime.studios.nodes[0].name}</span></div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description below on mobile */}
                 {anime.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-100 dark:border-gray-800 line-clamp-4">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-3 leading-relaxed line-clamp-4">
                     {stripHtml(anime.description)}
                   </p>
                 )}
-                <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                  {anime.episodes && <div className="flex gap-2"><span className="text-gray-500 dark:text-gray-400">Episodes:</span><span className="font-medium dark:text-gray-200">{anime.episodes}</span></div>}
-                  {anime.status && <div className="flex gap-2"><span className="text-gray-500 dark:text-gray-400">Status:</span><span className="font-medium dark:text-gray-200">{anime.status}</span></div>}
-                  {anime.seasonYear && <div className="flex gap-2"><span className="text-gray-500 dark:text-gray-400">Year:</span><span className="font-medium dark:text-gray-200">{anime.seasonYear}</span></div>}
-                  {anime.averageScore && <div className="flex gap-2"><span className="text-gray-500 dark:text-gray-400">Score:</span><span className="font-medium dark:text-gray-200">{anime.averageScore}%</span></div>}
-                </div>
               </div>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
+
+          {/* Comments */}
+          <div className="mx-2 md:mx-0">
+            <CommentSection episodeId={`anime-${id}-ep${episode}`} />
+          </div>
 
           {/* Relations */}
           {relations.length > 0 && (
-            <div className="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mx-4 md:mx-0">
+            <div className="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 p-4 mx-2 md:mx-0">
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><ChevronRight className="w-4 h-4" /> Related Anime</h3>
               <div className="space-y-3">
                 {relations.map((r: any) => (
@@ -621,96 +788,25 @@ export default function Watch() {
               </div>
             </div>
           )}
-
-          {/* Comments */}
-          <div className="mx-4 md:mx-0">
-            <CommentSection episodeId={`anime-${id}-ep${episode}`} />
-          </div>
         </div>
 
-        {/* ── Right: Episode list ── */}
-        <div className="space-y-6 px-4 md:px-0">
-          <div className="bg-white dark:bg-gray-950 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex flex-wrap gap-2 items-center">
-              <span className="text-sm font-bold dark:text-white shrink-0">
-                {loading ? '…' : `Episodes (${totalEps || '?'})`}
-              </span>
-              <div className="relative flex-1 min-w-[120px]">
-                <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Filter episodes…" value={epFilter}
-                  onChange={e => setEpFilter(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md py-1.5 pl-8 pr-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white dark:placeholder-gray-500" />
-              </div>
-              <button onClick={() => setEpView(v => v === 'list' ? 'grid' : 'list')}
-                className="p-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md text-gray-600 dark:text-gray-400 shrink-0">
-                {epView === 'list' ? <Eye className="w-4 h-4" /> : <List className="w-4 h-4" />}
-              </button>
-            </div>
-
-            <div className="max-h-[600px] overflow-y-auto">
-              {totalEps === 0 && !loading ? (
-                <div className="p-4 text-center text-sm text-gray-500">Episode info unavailable.</div>
-              ) : loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex gap-3 p-3 border-b border-gray-100 dark:border-gray-800 animate-pulse">
-                    <div className="w-12 h-12 shrink-0 rounded bg-gray-200 dark:bg-gray-800" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-                      <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-                    </div>
-                  </div>
-                ))
-              ) : filteredEps.length === 0 ? (
-                <div className="p-4 text-center text-sm text-gray-500">No episodes found.</div>
-              ) : epView === 'grid' ? (
-                <div className="grid grid-cols-6 gap-1.5 p-2">
-                  {filteredEps.map(ep => {
-                    const isActive = ep === episode;
-                    return (
-                      <Link key={ep} to={`/watch/${id}/${ep}`}
-                        className={`aspect-square flex items-center justify-center rounded text-xs font-bold transition-colors ${
-                          isActive ? 'bg-indigo-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        }`}>
-                        {isActive ? <Play className="w-3 h-3 fill-current" /> : ep}
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                filteredEps.map(ep => {
-                  const isActive = ep === episode;
-                  const streamEp = anime?.streamingEpisodes?.[ep - 1];
-                  const epTitle = streamEp?.title;
-                  const epThumb = streamEp?.thumbnail || posterImg;
-                  return (
-                    <Link key={ep} to={`/watch/${id}/${ep}`}
-                      onClick={() => addToHistory({ title, image: epThumb, url: `/watch/${id}/${ep}`, subtitle: `EP ${ep}` })}
-                      className={`flex gap-3 p-2 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group items-center ${isActive ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
-                      <div className={`w-20 h-12 shrink-0 rounded overflow-hidden relative border transition-colors ${
-                        isActive ? 'border-indigo-400' : 'border-gray-200 dark:border-gray-700 group-hover:border-gray-400'
-                      }`}>
-                        <img src={epThumb} alt={`Episode ${ep}`} className="w-full h-full object-cover"
-                          onError={e => { (e.target as HTMLImageElement).src = posterImg; }} />
-                        <div className={`absolute inset-0 flex items-center justify-center bg-black/30 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
-                          <Play className="w-4 h-4 fill-current text-white drop-shadow" />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-                        <h4 className={`text-xs font-bold truncate transition-colors ${
-                          isActive ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white'
-                        }`}>
-                          {epTitle && epTitle !== `Episode ${ep}` ? epTitle : `Episode ${ep}`}
-                        </h4>
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium mt-0.5 flex items-center gap-1">
-                          <span className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">{audio.toUpperCase()}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
-          </div>
+        {/* ── Right: Episode list (desktop only) ── */}
+        <div className="hidden lg:block space-y-6">
+          <EpisodePanel
+            loading={loading}
+            totalEps={totalEps}
+            epFilter={epFilter}
+            setEpFilter={setEpFilter}
+            epView={epView}
+            setEpView={setEpView}
+            filteredEps={filteredEps}
+            episode={episode}
+            id={id!}
+            anime={anime}
+            posterImg={posterImg}
+            audio={audio}
+            title={title}
+          />
 
           {/* Ad */}
           <div className="w-full aspect-[4/3] bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center border border-gray-200 dark:border-gray-700">
